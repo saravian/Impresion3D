@@ -4,34 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <style>
-        #nav-bar {
-            display: flex;
-            gap: 1rem;
-            background: rgba(255,255,255,0.7);
-            padding: 1rem 2rem;
-            border-radius: 0 0 18px 18px;
-            box-shadow: 0 2px 8px rgba(255,111,97,0.12);
-            justify-content: center;
-            margin-bottom: 2rem;
-        }
-        #nav-bar button {
-            background: #fff;
-            border: none;
-            border-radius: 12px;
-            padding: 0.5rem 1.2rem;
-            font-size: 1.1rem;
-            color: #222;
-            cursor: pointer;
-            transition: box-shadow 0.2s;
-        }
-        #nav-bar button:hover {
-            box-shadow: 0 4px 16px rgba(255,111,97,0.22);
-        }
-    </style>
 </head>
 <body style="min-height: 100vh; background: linear-gradient(135deg, #ff6f61 0%, #ffcc70 100%); font-family: 'Segoe UI', Arial, sans-serif; color: #222; margin:0;">
-    <nav id="nav-bar"></nav>
     <header style="padding: 2rem 0; text-align: center;">
         <h1 style="font-size: 3rem; color: #fff; text-shadow: 2px 2px 8px #ff6f61;">saravian > Impresión 3D</h1>
         <p style="font-size: 1.5rem; color: #fff; text-shadow: 1px 1px 4px #ffcc70;">Este repositorio contiene todos los modelos, perfiles y configuraciones para cada laminador.</p>
@@ -45,81 +19,13 @@
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
-    // Cambia esta URL por la API de tu backend, GitHub o Google Drive
-    // Ejemplo para GitHub API:
-    const repoOwner = "saravian";
-    const repoName = "Impresion3D-1";
-    const githubApiBase = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
-
-    // Obtiene los directorios del nivel raíz
-    function fetchDirectories(path = "") {
-        return fetch(githubApiBase + path)
-            .then(res => res.json())
-            .then(items => items.filter(item => item.type === "dir"))
-            .catch(() => []);
-    }
-
-    // Obtiene los archivos y subdirectorios de cualquier ruta
-    function fetchDirectoryFiles(path = "") {
-        return fetch(githubApiBase + path)
-            .then(res => res.json())
-            .then(items => items.map(item => ({
-                name: item.name,
-                type: item.type,
-                download_url: item.download_url,
-                path: item.path
-            })))
-            .catch(() => []);
-    }
-
-    // Renderiza la barra de navegación con los directorios raíz
-    function renderNavBar(dirs) {
-        const nav = document.getElementById('nav-bar');
-        nav.innerHTML = "";
-        dirs.forEach(dir => {
-            const btn = document.createElement('button');
-            btn.textContent = dir.name;
-            btn.onclick = () => showDirectory(dir.path);
-            nav.appendChild(btn);
-        });
-    }
-
-    // Muestra el contenido de un directorio (archivos y subdirectorios)
-    function showDirectory(path) {
-        fetchDirectoryFiles(path).then(files => {
-            const content = document.getElementById('readme-content');
-            let html = `<h2>Contenido de ${path || 'raíz'}</h2><ul>`;
-            files.forEach(file => {
-                if (file.type === "file") {
-                    html += `<li><a href="${file.download_url}" target="_blank">${file.name}</a></li>`;
-                } else if (file.type === "dir") {
-                    html += `<li><button onclick="showDirectory('${file.path}')">${file.name}</button></li>`;
-                }
-            });
-            html += "</ul>";
-            content.innerHTML = html;
-        });
-    }
-
-    // Inicial: cargar Readme.md y directorios raíz
-    fetch(`${githubApiBase}Readme.md`)
-        .then(response => response.json())
-        .then(data => fetch(data.download_url))
+    fetch('Readme.md')
         .then(response => response.text())
         .then(text => {
             document.getElementById('readme-content').innerHTML = marked.parse(text);
         })
         .catch(() => {
             document.getElementById('readme-content').textContent = 'No se pudo cargar el contenido de Readme.md.';
-        });
-
-    // Cargar y mostrar los directorios raíz en la barra de navegación
-    fetch(githubApiBase)
-        .then(res => res.json())
-        .then(items => {
-            // Solo directorios
-            const dirs = items.filter(item => item.type === "dir");
-            renderNavBar(dirs);
         });
 
     // Enlaces de contacto/redes sociales
@@ -136,6 +42,7 @@
     function getFavicon(url) {
         try {
             let u = new URL(url);
+            // Para mailto, usar un icono genérico
             if (u.protocol === "mailto:") {
                 return "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/svgs/solid/envelope.svg";
             }
@@ -162,9 +69,6 @@
         a.appendChild(document.createTextNode(link.label));
         container.appendChild(a);
     });
-
-    // Exponer showDirectory globalmente para los botones generados dinámicamente
-    window.showDirectory = showDirectory;
     </script>
-</body>
+    </body>
 </html>
