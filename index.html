@@ -7,14 +7,16 @@
 </head>
 <body style="min-height: 100vh; background: linear-gradient(135deg, #ff6f61 0%, #ffcc70 100%); font-family: 'Segoe UI', Arial, sans-serif; color: #222; margin:0;">
     <header style="padding: 2rem 0; text-align: center;">
-        <h1 style="font-size: 3rem; color: #fff; text-shadow: 2px 2px 8px #ff6f61;">saravian > Impresión 3D</h1>
+        <h1 style="font-size: 3rem; color: #fff; text-shadow: 2px 2px 8px #ff6f61;">saravian &gt; Impresión 3D</h1>
         <p style="font-size: 1.5rem; color: #fff; text-shadow: 1px 1px 4px #ffcc70;">Este repositorio contiene todos los modelos, perfiles y configuraciones para cada laminador.</p>
         <div id="readme-content" style="display: block; margin: 1rem auto 0 auto; padding: 0.5rem 1.5rem; background: #fff; color: #222; border-radius: 25px; box-shadow: 0 2px 8px rgba(255,111,97,0.2); text-align: left; max-width: 90vw;"></div>
     </header>
-    <section style="margin: 2rem auto; max-width: 90vw;">
-        <h2 style="color: #fff; text-shadow: 1px 1px 4px #ff6f61;">Directorios del repositorio</h2>
-        <ul id="repo-dirs" style="background: #fff; border-radius: 18px; box-shadow: 0 2px 8px rgba(255,111,97,0.12); padding: 1rem 2rem; color: #222; font-size: 1.1rem;"></ul>
-    </section>
+    <nav style="margin: 2rem auto; max-width: 90vw;">
+        <h2 style="color: #fff; text-shadow: 1px 1px 4px #ff6f61;">Menú de navegación</h2>
+        <ul id="repo-dirs" style="display: flex; flex-wrap: wrap; gap: 1rem; background: #fff; border-radius: 18px; box-shadow: 0 2px 8px rgba(255,111,97,0.12); padding: 1rem 2rem; color: #222; font-size: 1.1rem; list-style: none;">
+            <!-- Los directorios se agregan aquí -->
+        </ul>
+    </nav>
     <div id="contact-links" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; margin: 2rem auto 6rem auto; max-width: 90vw;">
         <!-- Los enlaces se agregan aquí -->
     </div>
@@ -23,16 +25,58 @@
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
-    fetch('Readme.md')
-        .then(response => response.text())
-        .then(text => {
-            document.getElementById('readme-content').innerHTML = marked.parse(text);
-        })
-        .catch(() => {
-            document.getElementById('readme-content').textContent = 'No se pudo cargar el contenido de Readme.md.';
-        });
+    function showReadme() {
+        fetch('Readme.md')
+            .then(response => response.text())
+            .then(text => {
+                document.getElementById('readme-content').innerHTML = marked.parse(text);
+            })
+            .catch(() => {
+                document.getElementById('readme-content').textContent = 'No se pudo cargar el contenido de Readme.md.';
+            });
+    }
 
-    // Enlaces de contacto/redes sociales
+    function showDirectory(dir) {
+        fetch(`${dir}/index.md`)
+            .then(response => {
+                if (response.ok) return response.text();
+                return fetch(`${dir}/index.html`).then(r => r.ok ? r.text() : null);
+            })
+            .then(content => {
+                const container = document.getElementById('readme-content');
+                if (content) {
+                    if (content.startsWith('#') || content.includes('\n')) {
+                        container.innerHTML = marked.parse(content);
+                    } else {
+                        container.innerHTML = content;
+                    }
+                } else {
+                    fetch(dir + '/')
+                        .then(r => r.text())
+                        .then(html => {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+                            const links = Array.from(doc.querySelectorAll('a')).filter(a => a.href && !a.href.endsWith('../'));
+                            if (links.length > 0) {
+                                container.innerHTML = `<h3>Contenido de ${dir}</h3><ul>` +
+                                    links.map(a => `<li><a href="${a.getAttribute('href')}" target="_blank">${a.textContent}</a></li>`).join('') +
+                                    `</ul>`;
+                            } else {
+                                container.innerHTML = `No se pudo mostrar el contenido de la carpeta <strong>${dir}</strong>.`;
+                            }
+                        })
+                        .catch(() => {
+                            container.innerHTML = `No se pudo mostrar el contenido de la carpeta <strong>${dir}</strong>.`;
+                        });
+                }
+            })
+            .catch(() => {
+                document.getElementById('readme-content').textContent = `No se pudo mostrar el contenido de la carpeta ${dir}.`;
+            });
+    }
+
+    showReadme();
+
     const links = [
         { url: "https://github.com/saravian", label: "GitHub" },
         { url: "mailto:nicolas@saraviando.com", label: "Email" },
@@ -46,7 +90,6 @@
     function getFavicon(url) {
         try {
             let u = new URL(url);
-            // Para mailto, usar un icono genérico
             if (u.protocol === "mailto:") {
                 return "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/svgs/solid/envelope.svg";
             }
@@ -74,24 +117,50 @@
         container.appendChild(a);
     });
 
-    // Listar directorios del repositorio usando una lista fija (autoindex no disponible)
-    const directorios = [
-        "Modelos3D",
-        "Perfiles",
-        "Configuraciones",
-        "Documentacion",
-        // Agrega aquí los nombres de los directorios que existen en tu repositorio
-    ];
-    const repoDirs = document.getElementById('repo-dirs');
-    if (directorios.length > 0) {
-        directorios.forEach(dir => {
-            const li = document.createElement('li');
-            li.textContent = dir;
-            repoDirs.appendChild(li);
-        });
-    } else {
-        repoDirs.innerHTML = '<li>No se encontraron directorios en el repositorio.</li>';
+    // Listar directorios reales del repositorio GitHub saravian/Impresion3D
+    async function fetchRepoDirectories() {
+        const apiUrl = "https://api.github.com/repos/saravian/Impresion3D/contents";
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error("No se pudo obtener el contenido del repositorio.");
+            const data = await response.json();
+            const dirs = data.filter(item => item.type === "dir").map(item => item.name);
+            const repoDirs = document.getElementById('repo-dirs');
+            repoDirs.innerHTML = "";
+            if (dirs.length > 0) {
+                dirs.forEach(dir => {
+                    const li = document.createElement('li');
+                    li.style = "margin: 0; padding: 0;";
+                    const a = document.createElement('a');
+                    a.href = "#";
+                    a.textContent = dir;
+                    a.style = "display: block; padding: 0.5rem 1.2rem; background: #ffcc70; color: #222; border-radius: 12px; text-decoration: none; font-weight: 500; box-shadow: 0 1px 4px rgba(255,111,97,0.10); transition: background 0.2s, box-shadow 0.2s;";
+                    a.onclick = (e) => {
+                        e.preventDefault();
+                        showDirectory(dir);
+                    };
+                    a.onmouseover = () => {
+                        a.style.background = "#ff6f61";
+                        a.style.color = "#fff";
+                        a.style.boxShadow = "0 2px 8px rgba(255,111,97,0.22)";
+                    };
+                    a.onmouseout = () => {
+                        a.style.background = "#ffcc70";
+                        a.style.color = "#222";
+                        a.style.boxShadow = "0 1px 4px rgba(255,111,97,0.10)";
+                    };
+                    li.appendChild(a);
+                    repoDirs.appendChild(li);
+                });
+            } else {
+                repoDirs.innerHTML = '<li>No se encontraron directorios en el repositorio.</li>';
+            }
+        } catch {
+            document.getElementById('repo-dirs').innerHTML = '<li>No se pudo obtener la lista de directorios del repositorio.</li>';
+        }
     }
+
+    fetchRepoDirectories();
     </script>
     </body>
 </html>
