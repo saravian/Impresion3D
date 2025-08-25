@@ -7,17 +7,68 @@
 </head>
 <body style="min-height: 100vh; background: linear-gradient(135deg, #ff6f61 0%, #ffcc70 100%); font-family: 'Segoe UI', Arial, sans-serif; color: #222; margin:0;">
     <header style="padding: 2rem 0; text-align: center;">
-        <div style="margin-bottom: 1rem;"></div>
-            <img src="logo.png" alt="Logo" style="height: 80px; width: auto; border-radius: 16px; box-shadow: 0 2px 8px rgba(255,111,97,0.2);">
-        </div>
-        <h1 style="font-size: 3rem; color: #fff; text-shadow: 2px 2px 8px #ff6f61;">¡Hola Mundo!</h1>
-        <p style="font-size: 1.5rem; color: #fff; text-shadow: 1px 1px 4px #ffcc70;">Este es un archivo HTML de ejemplo.</p>
-        <span style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1.5rem; background: #fff; color: #ff6f61; border-radius: 25px; font-weight: bold; box-shadow: 0 2px 8px rgba(255,111,97,0.2);">
-            Es genial que se pueda hacer esto en tiempo real
-        </span>
+        <h1 style="font-size: 3rem; color: #fff; text-shadow: 2px 2px 8px #ff6f61;">saravian > Impresión 3D</h1>
+        <p style="font-size: 1.5rem; color: #fff; text-shadow: 1px 1px 4px #ffcc70;">Este repositorio contiene todos los modelos, perfiles y configuraciones para cada laminador.</p>
+        <div id="readme-content" style="display: block; margin: 1rem auto 0 auto; padding: 0.5rem 1.5rem; background: #fff; color: #222; border-radius: 25px; box-shadow: 0 2px 8px rgba(255,111,97,0.2); text-align: left; max-width: 90vw;"></div>
     </header>
+    <div id="contact-links" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; margin: 2rem auto 6rem auto; max-width: 90vw;">
+        <!-- Los enlaces se agregan aquí -->
+    </div>
     <footer style="position: fixed; bottom: 0; width: 100%; text-align: center; padding: 1rem 0; background: rgba(255,255,255,0.2); color: #fff; font-size: 1rem;">
-        © 2024 Ctrl+P 3D
+        © 2024 Nicolás Saravia Vivas
     </footer>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+    fetch('Readme.md')
+        .then(response => response.text())
+        .then(text => {
+            document.getElementById('readme-content').innerHTML = marked.parse(text);
+        })
+        .catch(() => {
+            document.getElementById('readme-content').textContent = 'No se pudo cargar el contenido de Readme.md.';
+        });
+
+    // Enlaces de contacto/redes sociales
+    const links = [
+        { url: "https://github.com/saravian", label: "GitHub" },
+        { url: "mailto:nicolas@saraviando.com", label: "Email" },
+        { url: "https://twitter.com/aivaras_saviv", label: "Twitter" },
+        { url: "https://linkedin.com/in/saravian", label: "LinkedIn" },
+        { url: "https://www.instagram.com/_ctrlp_3d_", label: "Instagram" },
+        { url: "https://wa.me/+50672953344", label: "Whatsapp" },
+        { url: "https://t.me/nsaravia", label: "Telegram" }
+    ];
+
+    function getFavicon(url) {
+        try {
+            let u = new URL(url);
+            // Para mailto, usar un icono genérico
+            if (u.protocol === "mailto:") {
+                return "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/svgs/solid/envelope.svg";
+            }
+            return `https://www.google.com/s2/favicons?domain=${u.hostname}`;
+        } catch {
+            return "";
+        }
+    }
+
+    const container = document.getElementById('contact-links');
+    links.forEach(link => {
+        const a = document.createElement('a');
+        a.href = link.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.style = "display: flex; align-items: center; gap: 0.5rem; background: #fff; color: #222; border-radius: 18px; box-shadow: 0 2px 8px rgba(255,111,97,0.12); padding: 0.5rem 1rem; text-decoration: none; font-size: 1.1rem; transition: box-shadow 0.2s;";
+        a.onmouseover = () => a.style.boxShadow = "0 4px 16px rgba(255,111,97,0.22)";
+        a.onmouseout = () => a.style.boxShadow = "0 2px 8px rgba(255,111,97,0.12)";
+        const img = document.createElement('img');
+        img.src = getFavicon(link.url);
+        img.alt = "";
+        img.style = "width: 20px; height: 20px; border-radius: 4px; background: #eee;";
+        a.appendChild(img);
+        a.appendChild(document.createTextNode(link.label));
+        container.appendChild(a);
+    });
+    </script>
+    </body>
 </html>
