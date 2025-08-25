@@ -6,6 +6,46 @@
     <title>Document</title>
 </head>
 <body>
-    Hola Mundo
+    <div id="file-tree"></div>
+    <script>
+    async function fetchDirectory(path = '.') {
+        // This function assumes you have a backend API that returns the directory structure as JSON.
+        // Example response: [{ name: "folder", type: "directory", children: [...] }, { name: "file.txt", type: "file" }]
+        // Replace this with your actual API call.
+        const response = await fetch(`/api/list-directory?path=${encodeURIComponent(path)}`);
+        return await response.json();
+    }
+
+    function createTreeElement(item) {
+        const li = document.createElement('li');
+        li.textContent = item.name;
+        if (item.type === 'directory' && item.children) {
+            const ul = document.createElement('ul');
+            item.children.forEach(child => {
+                ul.appendChild(createTreeElement(child));
+            });
+            li.appendChild(ul);
+        }
+        return li;
+    }
+
+    async function renderFileTree() {
+        const treeContainer = document.getElementById('file-tree');
+        treeContainer.innerHTML = 'Cargando...';
+        try {
+            const data = await fetchDirectory();
+            const ul = document.createElement('ul');
+            data.forEach(item => {
+                ul.appendChild(createTreeElement(item));
+            });
+            treeContainer.innerHTML = '';
+            treeContainer.appendChild(ul);
+        } catch (e) {
+            treeContainer.innerHTML = 'Error al cargar la estructura de archivos.';
+        }
+    }
+
+    renderFileTree();
+    </script>
 </body>
 </html>
