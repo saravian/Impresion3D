@@ -6,6 +6,9 @@
     <title>Document</title>
 </head>
 <body style="min-height: 100vh; background: linear-gradient(135deg, #ff6f61 0%, #ffcc70 100%); font-family: 'Segoe UI', Arial, sans-serif; color: #222; margin:0;">
+    <nav id="navbar" style="width: 100%; background: rgba(255,255,255,0.85); box-shadow: 0 2px 8px rgba(255,111,97,0.12); padding: 0.5rem 0; display: flex; justify-content: center; gap: 2rem; position: sticky; top: 0; z-index: 10;">
+        <!-- Elementos de navegación generados dinámicamente -->
+    </nav>
     <header style="padding: 2rem 0; text-align: center;">
         <h1 style="font-size: 3rem; color: #fff; text-shadow: 2px 2px 8px #ff6f61;">saravian > Impresión 3D</h1>
         <p style="font-size: 1.5rem; color: #fff; text-shadow: 1px 1px 4px #ffcc70;">Este repositorio contiene todos los modelos, perfiles y configuraciones para cada laminador.</p>
@@ -19,14 +22,85 @@
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
-    fetch('Readme.md')
-        .then(response => response.text())
-        .then(text => {
-            document.getElementById('readme-content').innerHTML = marked.parse(text);
-        })
-        .catch(() => {
-            document.getElementById('readme-content').textContent = 'No se pudo cargar el contenido de Readme.md.';
+    // Función para obtener las carpetas del directorio raíz
+    async function getRootFolders() {
+        // Intenta obtener el listado del directorio raíz (requiere soporte del servidor)
+        try {
+            const response = await fetch('./');
+            const text = await response.text();
+            // Extrae carpetas usando una expresión regular simple sobre el HTML del listado
+            const folderRegex = /<a href="([^"]+)\/">([^<]+)<\/a>/g;
+            let match, folders = [];
+            while ((match = folderRegex.exec(text)) !== null) {
+                // Excluye carpetas ocultas y especiales
+                if (!match[1].startsWith('.') && match[1] !== 'node_modules') {
+                    folders.push(match[1]);
+                }
+            }
+            return folders;
+        } catch {
+            // Si no se puede listar, muestra un ejemplo fijo
+            return ['modelos', 'perfiles', 'configuraciones'];
+        }
+    }
+
+    // Renderiza la barra de navegación
+    getRootFolders().then(folders => {
+        const navbar = document.getElementById('navbar');
+        folders.forEach(folder => {
+            const btn = document.createElement('button');
+            btn.textContent = folder;
+            btn.style = "background: none; border: none; color: #ff6f61; font-size: 1.1rem; padding: 0.5rem 1.2rem; border-radius: 12px; cursor: pointer; transition: background 0.2s;";
+            btn.onmouseover = () => btn.style.background = "#ffcc70";
+            btn.onmouseout = () => btn.style.background = "none";
+            btn.onclick = () => showFolderContent(folder);
+            navbar.appendChild(btn);
         });
+    });
+
+    // Muestra el contenido de la carpeta en el bloque de readme-content
+    async function showFolderContent(folder) {
+        const container = document.getElementById('readme-content');
+        container.innerHTML = "<em>Cargando contenido de la carpeta...</em>";
+        try {
+            const response = await fetch(folder + '/');
+            const text = await response.text();
+            // Extrae archivos y carpetas
+            const itemRegex = /<a href="([^"]+)">([^<]+)<\/a>/g;
+            let match, items = [];
+            while ((match = itemRegex.exec(text)) !== null) {
+                // Excluye navegación hacia arriba
+                if (match[2] !== '../') {
+                    items.push({ name: match[2], href: folder + '/' + match[1] });
+                }
+            }
+            if (items.length === 0) {
+                container.innerHTML = "<strong>La carpeta está vacía.</strong>";
+            } else {
+                let html = `<h2>Contenido de <span style="color:#ff6f61">${folder}</span>:</h2><ul style="padding-left:1.2em;">`;
+                items.forEach(item => {
+                    html += `<li><a href="${item.href}" target="_blank" style="color:#ff6f61;text-decoration:underline;">${item.name}</a></li>`;
+                });
+                html += "</ul>";
+                container.innerHTML = html;
+            }
+        } catch {
+            container.innerHTML = "<strong>No se pudo cargar el contenido de la carpeta.</strong>";
+        }
+    }
+
+    // Renderiza el Readme.md por defecto
+    function showReadme() {
+        fetch('Readme.md')
+            .then(response => response.text())
+            .then(text => {
+                document.getElementById('readme-content').innerHTML = marked.parse(text);
+            })
+            .catch(() => {
+                document.getElementById('readme-content').textContent = 'No se pudo cargar el contenido de Readme.md.';
+            });
+    }
+    showReadme();
 
     // Enlaces de contacto/redes sociales
     const links = [
@@ -70,5 +144,5 @@
         container.appendChild(a);
     });
     </script>
-    </body>
+</body>
 </html>
