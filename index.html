@@ -51,6 +51,7 @@
     const repoName = "Impresion3D-1";
     const githubApiBase = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
 
+    // Obtiene los directorios del nivel raíz
     function fetchDirectories(path = "") {
         return fetch(githubApiBase + path)
             .then(res => res.json())
@@ -58,6 +59,7 @@
             .catch(() => []);
     }
 
+    // Obtiene los archivos y subdirectorios de cualquier ruta
     function fetchDirectoryFiles(path = "") {
         return fetch(githubApiBase + path)
             .then(res => res.json())
@@ -70,6 +72,7 @@
             .catch(() => []);
     }
 
+    // Renderiza la barra de navegación con los directorios raíz
     function renderNavBar(dirs) {
         const nav = document.getElementById('nav-bar');
         nav.innerHTML = "";
@@ -81,6 +84,7 @@
         });
     }
 
+    // Muestra el contenido de un directorio (archivos y subdirectorios)
     function showDirectory(path) {
         fetchDirectoryFiles(path).then(files => {
             const content = document.getElementById('readme-content');
@@ -109,7 +113,14 @@
             document.getElementById('readme-content').textContent = 'No se pudo cargar el contenido de Readme.md.';
         });
 
-    fetchDirectories().then(renderNavBar);
+    // Cargar y mostrar los directorios raíz en la barra de navegación
+    fetch(githubApiBase)
+        .then(res => res.json())
+        .then(items => {
+            // Solo directorios
+            const dirs = items.filter(item => item.type === "dir");
+            renderNavBar(dirs);
+        });
 
     // Enlaces de contacto/redes sociales
     const links = [
@@ -155,3 +166,5 @@
     // Exponer showDirectory globalmente para los botones generados dinámicamente
     window.showDirectory = showDirectory;
     </script>
+</body>
+</html>
