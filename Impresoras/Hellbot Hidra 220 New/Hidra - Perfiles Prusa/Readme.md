@@ -1,0 +1,2 @@
+# Hellbot Hidra en Prusa Slicer
+El perfil generado hace que, cada vez que se cambie el filamento en un extrusor, éste se mueva a la posición de reposo (donde está el limpiador de silicona) para realizar la purga y limpieza de la boquilla.
