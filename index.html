@@ -9,22 +9,31 @@
     <header style="padding: 2rem 0; text-align: center;">
         <h1 style="font-size: 3rem; color: #fff; text-shadow: 2px 2px 8px #ff6f61;">saravian &gt; Impresión 3D</h1>
         <p style="font-size: 1.5rem; color: #fff; text-shadow: 1px 1px 4px #ffcc70;">Este repositorio contiene todos los modelos, perfiles y configuraciones para cada laminador; además de consideraciones útiles para las diferentes impresiones.</p>
-        <div id="readme-content" style="display: block; margin: 1rem auto 0 auto; padding: 0.5rem 1.5rem; background: #fff; color: #222; border-radius: 25px; box-shadow: 0 2px 8px rgba(255,111,97,0.2); text-align: left; max-width: 90vw;"></div>
     </header>
-    <nav style="margin: 2rem auto; max-width: 90vw;">
-        <h2 style="color: #fff; text-shadow: 1px 1px 4px #ff6f61;">Menú de navegación</h2>
-        <ul id="repo-dirs" style="display: flex; flex-wrap: wrap; gap: 1rem; background: #fff; border-radius: 18px; box-shadow: 0 2px 8px rgba(255,111,97,0.12); padding: 1rem 2rem; color: #222; font-size: 1.1rem; list-style: none;">
+    <nav style="margin: 2rem auto 0 auto; max-width: 90vw;">
+        <ul id="repo-dirs" style="display: flex; flex-wrap: wrap; gap: 1rem; padding: 0; color: #222; font-size: 1.1rem; list-style: none; background: none; border-radius: 0; box-shadow: none;">
             <!-- Los directorios se agregan aquí -->
         </ul>
     </nav>
-    <div id="contact-links" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; margin: 2rem auto 6rem auto; max-width: 90vw;">
+    <div id="readme-content" style="display: block; margin: 2rem auto 0 auto; padding: 0.5rem 1.5rem; background: #fff; color: #222; border-radius: 25px; box-shadow: 0 2px 8px rgba(255,111,97,0.2); text-align: left; max-width: 90vw;"></div>
+    <div id="contact-links" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; margin: 2rem auto 6rem auto; max-width: 90vw;"></div>
         <!-- Los enlaces se agregan aquí -->
     </div>
     <footer style="position: fixed; bottom: 0; width: 100%; text-align: center; padding: 1rem 0; background: rgba(255,255,255,0.2); color: #fff; font-size: 1rem;">
         © 2024 Nicolás Saravia Vivas
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- ModelView web component -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@schobben/modelview@latest/dist/modelview.min.js"></script>
     <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelector('nav').style.margin = "2rem auto 0 auto";
+        document.getElementById('readme-content').style.margin = "2rem auto 0 auto";
+        document.getElementById('contact-links').style.margin = "2rem auto 6rem auto";
+    });
+
+    let currentPath = [];
+
     function showReadme() {
         fetch('Readme.md')
             .then(response => response.text())
@@ -36,38 +45,66 @@
             });
     }
 
-    function showDirectory(dir) {
-        fetch(`${dir}/index.md`)
-            .then(response => {
-                if (response.ok) return response.text();
-                return fetch(`${dir}/index.html`).then(r => r.ok ? r.text() : null);
-            })
-            .then(content => {
+    function shouldHide(name) {
+        return name.startsWith('@') || name.startsWith('.');
+    }
+
+    // Helper para saber si es STL o 3MF
+    function isModelFile(name) {
+        return name.toLowerCase().endsWith('.stl') || name.toLowerCase().endsWith('.3mf');
+    }
+
+    async function showDirectory(dir) {
+        if (dir === "__inicio__") {
+            currentPath = [];
+            await fetchRepoDirectories();
+            showReadme();
+            return;
+        }
+        currentPath.push(dir);
+        await fetchRepoDirectories();
+        // Mostrar contenido de la carpeta
+        fetch(`https://api.github.com/repos/saravian/Impresion3D/contents/${currentPath.join('/')}`)
+            .then(response => response.json())
+            .then(items => {
                 const container = document.getElementById('readme-content');
-                if (content) {
-                    if (content.startsWith('#') || content.includes('\n')) {
-                        container.innerHTML = marked.parse(content);
+                if (Array.isArray(items)) {
+                    // Filtrar elementos ocultos
+                    items = items.filter(item => !shouldHide(item.name));
+                    let mdFile = items.find(item => item.name.toLowerCase() === 'index.md' || item.name.toLowerCase() === 'readme.md');
+                    if (mdFile) {
+                        fetch(mdFile.download_url)
+                            .then(r => r.text())
+                            .then(text => container.innerHTML = marked.parse(text))
+                            .catch(() => container.innerHTML = 'No se pudo cargar el archivo markdown.');
                     } else {
-                        container.innerHTML = content;
+                        let htmlFile = items.find(item => item.name.toLowerCase() === 'index.html');
+                        if (htmlFile) {
+                            fetch(htmlFile.download_url)
+                                .then(r => r.text())
+                                .then(text => container.innerHTML = text)
+                                .catch(() => container.innerHTML = 'No se pudo cargar el archivo HTML.');
+                        } else {
+                            // Mostrar listado de archivos y carpetas
+                            container.innerHTML = `<h3>Contenido de ${dir}</h3><ul>` +
+                                items.map(item => {
+                                    if (item.type === "dir") {
+                                        return `<li><a href="#" onclick="showDirectory('${item.name}');return false;">${item.name}</a></li>`;
+                                    } else if (isModelFile(item.name)) {
+                                        // Visualizador ModelView
+                                        return `<li>
+                                            <a href="#" onclick="showModel('${item.download_url}', '${item.name}');return false;">${item.name}</a>
+                                            <span id="modelview-${item.name.replace(/[^a-zA-Z0-9]/g,'')}"></span>
+                                        </li>`;
+                                    } else {
+                                        return `<li><a href="${item.download_url}" target="_blank">${item.name}</a></li>`;
+                                    }
+                                }).join('') +
+                                `</ul>`;
+                        }
                     }
                 } else {
-                    fetch(dir + '/')
-                        .then(r => r.text())
-                        .then(html => {
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(html, 'text/html');
-                            const links = Array.from(doc.querySelectorAll('a')).filter(a => a.href && !a.href.endsWith('../'));
-                            if (links.length > 0) {
-                                container.innerHTML = `<h3>Contenido de ${dir}</h3><ul>` +
-                                    links.map(a => `<li><a href="${a.getAttribute('href')}" target="_blank">${a.textContent}</a></li>`).join('') +
-                                    `</ul>`;
-                            } else {
-                                container.innerHTML = `No se pudo mostrar el contenido de la carpeta <strong>${dir}</strong>.`;
-                            }
-                        })
-                        .catch(() => {
-                            container.innerHTML = `No se pudo mostrar el contenido de la carpeta <strong>${dir}</strong>.`;
-                        });
+                    container.innerHTML = `No se pudo mostrar el contenido de la carpeta <strong>${dir}</strong>.`;
                 }
             })
             .catch(() => {
@@ -75,7 +112,25 @@
             });
     }
 
-    showReadme();
+    // Visualizador ModelView para STL/3MF
+    window.showModel = function(url, name) {
+        // Elimina cualquier otro modelview abierto
+        document.querySelectorAll('model-view').forEach(e => e.remove());
+        // Busca el span donde debe ir el modelview
+        const spanId = `modelview-${name.replace(/[^a-zA-Z0-9]/g,'')}`;
+        const span = document.getElementById(spanId);
+        if (span) {
+            span.innerHTML = `
+                <model-view
+                    src="${url}"
+                    style="width: 100%; max-width: 600px; height: 400px; display: block; margin: 1rem auto;"
+                    background="#fff"
+                    camera-controls
+                    auto-rotate
+                ></model-view>
+            `;
+        }
+    };
 
     const links = [
         { url: "https://github.com/saravian", label: "GitHub" },
@@ -119,14 +174,77 @@
 
     // Listar directorios reales del repositorio GitHub saravian/Impresion3D
     async function fetchRepoDirectories() {
-        const apiUrl = "https://api.github.com/repos/saravian/Impresion3D/contents";
+        let apiUrl = "https://api.github.com/repos/saravian/Impresion3D/contents";
+        if (currentPath.length) {
+            apiUrl += "/" + currentPath.join("/");
+        }
         try {
             const response = await fetch(apiUrl);
             if (!response.ok) throw new Error("No se pudo obtener el contenido del repositorio.");
-            const data = await response.json();
+            let data = await response.json();
+            // Filtrar elementos ocultos
+            data = data.filter(item => !shouldHide(item.name));
             const dirs = data.filter(item => item.type === "dir").map(item => item.name);
             const repoDirs = document.getElementById('repo-dirs');
             repoDirs.innerHTML = "";
+
+            // Botón volver si no estamos en raíz
+            if (currentPath.length) {
+                const liVolver = document.createElement('li');
+                liVolver.style = "margin: 0; padding: 0;";
+                const aVolver = document.createElement('a');
+                aVolver.href = "#";
+                aVolver.textContent = "Volver";
+                aVolver.style = "display: block; padding: 0.5rem 1.2rem; background: #ffcc70; color: #222; border-radius: 12px; text-decoration: none; font-weight: 500; box-shadow: 0 1px 4px rgba(255,111,97,0.10); transition: background 0.2s, box-shadow 0.2s;";
+                aVolver.onclick = (e) => {
+                    e.preventDefault();
+                    currentPath.pop();
+                    if (currentPath.length === 0) {
+                        showDirectory("__inicio__");
+                    } else {
+                        showDirectory(currentPath[currentPath.length - 1]);
+                    }
+                };
+                aVolver.onmouseover = () => {
+                    aVolver.style.background = "#ff6f61";
+                    aVolver.style.color = "#fff";
+                    aVolver.style.boxShadow = "0 2px 8px rgba(255,111,97,0.22)";
+                };
+                aVolver.onmouseout = () => {
+                    aVolver.style.background = "#ffcc70";
+                    aVolver.style.color = "#222";
+                    aVolver.style.boxShadow = "0 1px 4px rgba(255,111,97,0.10)";
+                };
+                liVolver.appendChild(aVolver);
+                repoDirs.appendChild(liVolver);
+            }
+
+            // Agregar elemento "Inicio" solo en raíz
+            if (currentPath.length === 0) {
+                const liInicio = document.createElement('li');
+                liInicio.style = "margin: 0; padding: 0;";
+                const aInicio = document.createElement('a');
+                aInicio.href = "#";
+                aInicio.textContent = "Inicio";
+                aInicio.style = "display: block; padding: 0.5rem 1.2rem; background: #ffcc70; color: #222; border-radius: 12px; text-decoration: none; font-weight: 500; box-shadow: 0 1px 4px rgba(255,111,97,0.10); transition: background 0.2s, box-shadow 0.2s;";
+                aInicio.onclick = (e) => {
+                    e.preventDefault();
+                    showDirectory("__inicio__");
+                };
+                aInicio.onmouseover = () => {
+                    aInicio.style.background = "#ff6f61";
+                    aInicio.style.color = "#fff";
+                    aInicio.style.boxShadow = "0 2px 8px rgba(255,111,97,0.22)";
+                };
+                aInicio.onmouseout = () => {
+                    aInicio.style.background = "#ffcc70";
+                    aInicio.style.color = "#222";
+                    aInicio.style.boxShadow = "0 1px 4px rgba(255,111,97,0.10)";
+                };
+                liInicio.appendChild(aInicio);
+                repoDirs.appendChild(liInicio);
+            }
+
             if (dirs.length > 0) {
                 dirs.forEach(dir => {
                     const li = document.createElement('li');
@@ -153,14 +271,16 @@
                     repoDirs.appendChild(li);
                 });
             } else {
-                repoDirs.innerHTML = '<li>No se encontraron directorios en el repositorio.</li>';
+                repoDirs.innerHTML += '<li>No se encontraron directorios en el repositorio.</li>';
             }
         } catch {
             document.getElementById('repo-dirs').innerHTML = '<li>No se pudo obtener la lista de directorios del repositorio.</li>';
         }
     }
 
+    showReadme();
     fetchRepoDirectories();
+    </script>
     </script>
     </body>
 </html>
