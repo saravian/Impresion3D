@@ -11,6 +11,10 @@
         <p style="font-size: 1.5rem; color: #fff; text-shadow: 1px 1px 4px #ffcc70;">Este repositorio contiene todos los modelos, perfiles y configuraciones para cada laminador.</p>
         <div id="readme-content" style="display: block; margin: 1rem auto 0 auto; padding: 0.5rem 1.5rem; background: #fff; color: #222; border-radius: 25px; box-shadow: 0 2px 8px rgba(255,111,97,0.2); text-align: left; max-width: 90vw;"></div>
     </header>
+    <section style="margin: 2rem auto; max-width: 90vw;">
+        <h2 style="color: #fff; text-shadow: 1px 1px 4px #ff6f61;">Directorios del repositorio</h2>
+        <ul id="repo-dirs" style="background: #fff; border-radius: 18px; box-shadow: 0 2px 8px rgba(255,111,97,0.12); padding: 1rem 2rem; color: #222; font-size: 1.1rem;"></ul>
+    </section>
     <div id="contact-links" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; margin: 2rem auto 6rem auto; max-width: 90vw;">
         <!-- Los enlaces se agregan aquí -->
     </div>
@@ -69,6 +73,34 @@
         a.appendChild(document.createTextNode(link.label));
         container.appendChild(a);
     });
+
+    // Listar directorios del repositorio usando fetch a la raíz y parseando el HTML
+    // Esto solo funciona si el servidor permite listar el directorio (autoindex)
+    fetch('./')
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const repoDirs = document.getElementById('repo-dirs');
+            let found = false;
+            // Buscar enlaces que terminan con "/"
+            doc.querySelectorAll('a').forEach(a => {
+                const href = a.getAttribute('href');
+                // Evitar enlaces relativos al padre y al propio directorio
+                if (href && href.endsWith('/') && href !== './' && href !== '../') {
+                    const li = document.createElement('li');
+                    li.textContent = href.replace(/\/$/, '');
+                    repoDirs.appendChild(li);
+                    found = true;
+                }
+            });
+            if (!found) {
+                repoDirs.innerHTML = '<li>No se pudo listar los directorios (autoindex no disponible).</li>';
+            }
+        })
+        .catch(() => {
+            document.getElementById('repo-dirs').innerHTML = '<li>No se pudo acceder al listado de directorios.</li>';
+        });
     </script>
     </body>
 </html>
