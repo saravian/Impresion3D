@@ -74,33 +74,24 @@
         container.appendChild(a);
     });
 
-    // Listar directorios del repositorio usando fetch a la raíz y parseando el HTML
-    // Esto solo funciona si el servidor permite listar el directorio (autoindex)
-    fetch('./')
-        .then(response => response.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const repoDirs = document.getElementById('repo-dirs');
-            let found = false;
-            // Buscar enlaces que terminan con "/"
-            doc.querySelectorAll('a').forEach(a => {
-                const href = a.getAttribute('href');
-                // Evitar enlaces relativos al padre y al propio directorio
-                if (href && href.endsWith('/') && href !== './' && href !== '../') {
-                    const li = document.createElement('li');
-                    li.textContent = href.replace(/\/$/, '');
-                    repoDirs.appendChild(li);
-                    found = true;
-                }
-            });
-            if (!found) {
-                repoDirs.innerHTML = '<li>No se pudo listar los directorios (autoindex no disponible).</li>';
-            }
-        })
-        .catch(() => {
-            document.getElementById('repo-dirs').innerHTML = '<li>No se pudo acceder al listado de directorios.</li>';
+    // Listar directorios del repositorio usando una lista fija (autoindex no disponible)
+    const directorios = [
+        "Modelos3D",
+        "Perfiles",
+        "Configuraciones",
+        "Documentacion",
+        // Agrega aquí los nombres de los directorios que existen en tu repositorio
+    ];
+    const repoDirs = document.getElementById('repo-dirs');
+    if (directorios.length > 0) {
+        directorios.forEach(dir => {
+            const li = document.createElement('li');
+            li.textContent = dir;
+            repoDirs.appendChild(li);
         });
+    } else {
+        repoDirs.innerHTML = '<li>No se encontraron directorios en el repositorio.</li>';
+    }
     </script>
     </body>
 </html>
