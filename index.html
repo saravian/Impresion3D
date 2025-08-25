@@ -5,47 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
-<body>
-    <div id="file-tree"></div>
-    <script>
-    async function fetchDirectory(path = '.') {
-        // This function assumes you have a backend API that returns the directory structure as JSON.
-        // Example response: [{ name: "folder", type: "directory", children: [...] }, { name: "file.txt", type: "file" }]
-        // Replace this with your actual API call.
-        const response = await fetch(`/api/list-directory?path=${encodeURIComponent(path)}`);
-        return await response.json();
-    }
-
-    function createTreeElement(item) {
-        const li = document.createElement('li');
-        li.textContent = item.name;
-        if (item.type === 'directory' && item.children) {
-            const ul = document.createElement('ul');
-            item.children.forEach(child => {
-                ul.appendChild(createTreeElement(child));
-            });
-            li.appendChild(ul);
-        }
-        return li;
-    }
-
-    async function renderFileTree() {
-        const treeContainer = document.getElementById('file-tree');
-        treeContainer.innerHTML = 'Cargando...';
-        try {
-            const data = await fetchDirectory();
-            const ul = document.createElement('ul');
-            data.forEach(item => {
-                ul.appendChild(createTreeElement(item));
-            });
-            treeContainer.innerHTML = '';
-            treeContainer.appendChild(ul);
-        } catch (e) {
-            treeContainer.innerHTML = 'Error al cargar la estructura de archivos.';
-        }
-    }
-
-    renderFileTree();
-    </script>
+<body style="min-height: 100vh; background: linear-gradient(135deg, #ff6f61 0%, #ffcc70 100%); font-family: 'Segoe UI', Arial, sans-serif; color: #222; margin:0;">
+    <header style="padding: 2rem 0; text-align: center;">
+        <div style="margin-bottom: 1rem;"></div>
+            <img src="logo.png" alt="Logo" style="height: 80px; width: auto; border-radius: 16px; box-shadow: 0 2px 8px rgba(255,111,97,0.2);">
+        </div>
+        <h1 style="font-size: 3rem; color: #fff; text-shadow: 2px 2px 8px #ff6f61;">¡Hola Mundo!</h1>
+        <p style="font-size: 1.5rem; color: #fff; text-shadow: 1px 1px 4px #ffcc70;">Este es un archivo HTML de ejemplo.</p>
+        <span style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1.5rem; background: #fff; color: #ff6f61; border-radius: 25px; font-weight: bold; box-shadow: 0 2px 8px rgba(255,111,97,0.2);">
+            Es genial que se pueda hacer esto en tiempo real
+        </span>
+    </header>
+    <footer style="position: fixed; bottom: 0; width: 100%; text-align: center; padding: 1rem 0; background: rgba(255,255,255,0.2); color: #fff; font-size: 1rem;">
+        © 2024 Ctrl+P 3D
+    </footer>
 </body>
 </html>
