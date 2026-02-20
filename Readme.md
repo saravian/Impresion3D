@@ -12,4 +12,4 @@
 
 # Impresoras a considerar
 - Hellbot Hidra 220 New (IDEX 235x235mm)
-- Bambulab P1S con AMS2
+- Bambulab A1 combo
